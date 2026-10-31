@@ -115,11 +115,11 @@ class MainActivity : Activity() {
                 engineProcess = process
 
                 engineWriter = BufferedWriter(
-                    OutputStreamWriter(process.outputStream())
+                    OutputStreamWriter(process.getOutputStream())
                 )
 
                 val reader = BufferedReader(
-                    InputStreamReader(process.inputStream())
+                    InputStreamReader(process.getInputStream())
                 )
 
                 Thread {
