@@ -19,6 +19,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -27,14 +32,13 @@ jobs:
       - name: Install Android SDK packages
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
 
-      - name: Download Stockfish 19
+      - name: Download Stockfish WASM
         run: |
-          mkdir -p app/src/main/assets
-          curl -fL https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-android-arm64-universal.tar.gz -o stockfish.tar.gz
-          tar -xzf stockfish.tar.gz
-          cp stockfish/stockfish-android-arm64-universal app/src/main/assets/stockfish
-          chmod 755 app/src/main/assets/stockfish
-          ls -lh app/src/main/assets/stockfish
+          mkdir -p .engine-package app/src/main/assets
+          npm pack stockfish@19.0.1 --pack-destination .engine-package --silent
+          tar -xzf .engine-package/stockfish-19.0.1.tgz -C .engine-package
+          cp .engine-package/package/bin/stockfish-19-lite-single.js app/src/main/assets/
+          cp .engine-package/package/bin/stockfish-19-lite-single.wasm app/src/main/assets/
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
