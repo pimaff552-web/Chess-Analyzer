@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Chess Analyzer</title>
+<style>
+body{margin:0;background:#111827;color:#f9fafb;font-family:Arial,sans-serif;padding:24px}
+h1{font-size:26px;margin-top:15px}
+.card{background:#1f2937;padding:18px;border-radius:16px;margin-top:20px}
+.status{color:#fbbf24;font-size:14px}
+button{width:100%;padding:16px;margin-top:15px;border:0;border-radius:12px;background:#16a34a;color:white;font-size:16px;font-weight:bold}
+button:disabled{background:#555}
+#result{font-size:24px;font-weight:bold;margin-top:15px;color:#4ade80}
+#info{color:#cbd5e1;font-size:14px;margin-top:12px}
+</style>
+</head>
+<body>
+<h1>♟ CHESS ANALYZER</h1>
+<p>Stockfish 19 · Offline Engine</p>
+<div class="card">
+<p id="status" class="status">Loading engine...</p>
+<button id="analyze" disabled>START ANALYSIS</button>
+<div id="result">No move yet</div>
+<p id="info">Waiting for engine...</p>
+</div>
+<script>
+const statusEl=document.getElementById("status");
+const button=document.getElementById("analyze");
+const resultEl=document.getElementById("result");
+const infoEl=document.getElementById("info");
+let engineReady=false;
+let worker;
+
+try{
+ worker=new Worker("stockfish-19-lite-single.js");
+ worker.onmessage=function(event){
+  const line=typeof event.data==="string"?event.data:String(event.data);
+  if(line==="uciok"){
+   worker.postMessage("isready");
+  }else if(line==="readyok"){
+   engineReady=true;
+   statusEl.textContent="Engine ready · Offline";
+   button.disabled=false;
+   infoEl.textContent="Stockfish 19 Lite is ready.";
+  }else if(line.startsWith("info ")){
+   const depth=line.match(/\bdepth (\d+)/);
+   const score=line.match(/\bscore cp (-?\d+)/);
+   if(depth) infoEl.textContent="Depth: "+depth[1]+(score?" · Evaluation: "+(Number(score[1])/100).toFixed(2):"");
+  }else if(line.startsWith("bestmove ")){
+   const move=line.split(/\s+/)[1];
+   resultEl.textContent=move==="(none)"?"No move found":move;
+   statusEl.textContent="Analysis complete";
+   button.disabled=false;
+  }
+ };
+ worker.onerror=function(e){
+  statusEl.textContent="Engine error: "+e.message;
+ };
+ worker.postMessage("uci");
+}catch(e){
+ statusEl.textContent="Error: "+e.message;
+}
+button.onclick=function(){
+ if(!engineReady)return;
+ button.disabled=true;
+ resultEl.textContent="Analyzing...";
+ statusEl.textContent="Analyzing position...";
+ infoEl.textContent="Please wait...";
+ worker.postMessage("ucinewgame");
+ worker.postMessage("position startpos");
+ worker.postMessage("go depth 12");
+};
+</script>
+</body>
+</html>
