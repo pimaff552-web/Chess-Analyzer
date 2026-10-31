@@ -2,7 +2,7 @@ name: Build Chess Analyzer APK
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -25,8 +25,16 @@ jobs:
           packages: platform-tools
 
       - name: Install Android SDK packages
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+
+      - name: Download Stockfish 19
         run: |
-          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+          mkdir -p app/src/main/assets
+          curl -fL https://github.com/official-stockfish/Stockfish/releases/download/sf_19/stockfish-android-arm64-universal.tar.gz -o stockfish.tar.gz
+          tar -xzf stockfish.tar.gz
+          cp stockfish/stockfish-android-arm64-universal app/src/main/assets/stockfish
+          chmod 755 app/src/main/assets/stockfish
+          ls -lh app/src/main/assets/stockfish
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
